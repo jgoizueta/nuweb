@@ -73,7 +73,12 @@
 %   a problem in this version, because if the macro O_EXCL is not defined
 %   (as happens in windows) the temporary file will not be overwritten for the
 %   next file (should the "a" for append be changed in the non O_EXCL alternative?)
-
+% --2002-06-27: symbolic parameters (@@1,@@2,...) didn't work in the
+%   parameters values passed to macro invocation. To allow for this I've changed
+%   the Parameters type (that was simply an array of ints) and added a pointer
+%   so that each parameter list points to the parameter list active at the
+%   point of its definition. This way, we can evaluate parameters in the
+%   parameter list.
 
 \documentclass{report}
 \newif\ifshowcode
@@ -1070,8 +1075,14 @@ Macro parameters were added on later in nuweb's development.
 There still is not, for example, an index of macro parameters.
 We need a data type to keep track of macro parameters.
 
+%JG--
+Vamos a encadenar las listas de parámetros, de forma que
+cada una apunte a la correspondiente a la invocación antecesora a
+a la actual.
+
+
 @o scraps.c -d
-@{typedef int *Parameters;
+@{typedef struct Parameters_t { int p[10]; struct Parameters_t *parent; } *Parameters;
 @| Parameters @}
 
 
@@ -1085,15 +1096,15 @@ the parent parameters rather than zero.
 i.e. the parameters prior to the current macro invocation
 
 @d Handle macro parameter substitution @{
-    case '1': case '2': case '3': 
+    case '1': case '2': case '3':
     case '4': case '5': case '6':
     case '7': case '8': case '9':
-              if ( parameters && parameters[c - '1'] ) {
+              if ( parameters && parameters->p[c - '1'] ) {
                 Scrap_Node param_defs;
-                param_defs.scrap = parameters[c - '1'];
+                param_defs.scrap = parameters->p[c - '1'];
                 param_defs.next = 0;
                 write_scraps(file, &param_defs, global_indent + indent,
-                          indent_chars, debug_flag, tab_flag, indent_flag, meta_parameters, 0);
+                          indent_chars, debug_flag, tab_flag, indent_flag, parameters ? parameters->parent : 0);
               } else {
                 /* ZZZ need error message here */
               }
@@ -1115,15 +1126,15 @@ and write in the collected scrap:
    @@<foo @@(10@@,11@@)@@>
 \end{verbatim}
 
-@d Save macro parameters 
-@{{ 
+@d Save macro parameters
+@{{
   int param_scrap;
   char param_buf[10];
 
   push(nw_char, &writer);
   push('(', &writer);
   do {
-     
+
      param_scrap = collect_scrap();
      sprintf(param_buf, "%d", param_scrap);
      pushs(param_buf, &writer);
@@ -1149,11 +1160,13 @@ first character.
 @d Check for macro parameters
 @{
   if (c == '(') {
-    Parameters res = arena_getmem(10 * sizeof(int));
-    int *p2 = res;
+    Parameters res = arena_getmem(sizeof(*res));
+    int *p2 = res->p;
     int count = 0;
     int scrapnum;
 
+    res->parent = 0;
+    
     while( c && c != ')' ) {
       scrapnum = 0;
       c = pop(manager);
@@ -1165,6 +1178,7 @@ first character.
         c = pop(manager);
       }
       *p2++ = scrapnum;
+      count++;
     }
     while (count < 10) {
       *p2++ = 0;
@@ -3245,7 +3259,7 @@ extern void write_single_scrap_ref();
 
 @o scraps.c -d 
 @{int write_scraps(file, defs, global_indent, indent_chars,
-                   debug_flag, tab_flag, indent_flag, parameters, meta_parameters)
+                   debug_flag, tab_flag, indent_flag, parameters)
      FILE *file;
      Scrap_Node *defs;
      int global_indent;
@@ -3254,7 +3268,6 @@ extern void write_single_scrap_ref();
      char tab_flag;
      char indent_flag;
      Parameters parameters;
-     Parameters meta_parameters;
 {
   int indent = 0;
   while (defs) {
@@ -3284,12 +3297,12 @@ extern void write_single_scrap_ref();
                  break;
       case '\t': @<Handle tab...@>
                  break;
-      default:   
+      default:
          if (c==nw_char)
            {
              @<Check for macro invocation in scrap@>
              break;
-           }         
+           }
          putc(c, file);
                  indent_chars[global_indent + indent] = ' ';
                  indent++;
@@ -3360,6 +3373,8 @@ extern void write_single_scrap_ref();
 @d Copy macro into...
 @{{
   Name *name = pop_scrap_name(&reader, &local_parameters);
+  if (local_parameters)
+    local_parameters->parent = parameters;
   if (name->mark) {
     fprintf(stderr, "%s: recursive macro discovered involving <%s>\n",
             command_name, name->spelling);
@@ -3369,7 +3384,7 @@ extern void write_single_scrap_ref();
     name->mark = TRUE;
     indent = write_scraps(file, name->defs, global_indent + indent,
                           indent_chars, debug_flag, tab_flag, indent_flag,
-                          local_parameters, parameters);
+                          local_parameters);
     indent -= global_indent;
     name->mark = FALSE;
   }
