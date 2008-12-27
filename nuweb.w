@@ -32,8 +32,12 @@
 
 % Note:
 % This file has been changed by Javier Goizueta <jgoizueta@@jazzfree.es>
-% on 2001-02-15. 
-% These are the changes:
+% on 2001-02-15.
+% The places where it has been modified are tagged by a Latex comment
+% starting with %JG-
+% Each modification also includes a code that identifies which change
+% has originated the modification. These are the changes:
+%  --tags from changes incorporated into nuweb CVS code have beer removed
 % LANG  -- Introduction of \NW macros to substitue language dependent text
 % DIAM  -- Introduction of \NWsep instead of the \diamond separator
 % HYPER -- Introduction of hyper-references
@@ -46,6 +50,8 @@
 % TIE   -- Replacement of ~ by "\nobreak\ "
 % SCRAPs-- Elimination of s
 % DNGL  -- Correction: option -d was not working and was misdocumented
+% CHR8  -- Patch to allow 8-bit characters in macro names
+% TEMPD -- Delete temporary files when output directory does not exists.
 %  --after the CHAR modifications, to be able to specify non-ascii characters
 %    for the scape character, the program must be compiled with the -K
 %    option in Borland compilers or the -funsigned-char in GNU's gcc
@@ -59,6 +65,15 @@
 %   used with the spanish.ldf option (which makes ~ an active character).
 % --2002-01-15: an ``s'' was being added to the NWtxtDefBy and NWtxtDefBy
 %   messages when followed by more than one reference.
+% --2002-01-22: using expressions like \'a for spanish accents was bothering
+%   me too much. This is a quick patch to allow ISO-8859-1 characters in macro
+%   names. (it relies in being compiled with unsigned chars)
+% --2002-06-14: This happens at least on DOS/Windows: if target directory does
+%   not exits, rename fails. This leaves temporary files in that case which is
+%   a problem in this version, because if the macro O_EXCL is not defined
+%   (as happens in windows) the temporary file will not be overwritten for the
+%   next file (should the "a" for append be changed in the non O_EXCL alternative?)
+
 
 \documentclass{report}
 \newif\ifshowcode
@@ -76,7 +91,7 @@
 \setlength{\textwidth}{6.5in}
 \setlength{\marginparwidth}{0.5in}
 
-\title{Nuweb Version 1.0b1 \\ A Simple Literate Programming Tool}
+\title{Nuweb Version 1.0b1g \\ A Simple Literate Programming Tool}
 \date{}
 \author{Preston Briggs\thanks{This work has been supported by ARPA,
 through ONR grant N00014-91-J-1989.} 
@@ -2566,9 +2581,8 @@ The ANSI/ISO C standard does {\em not}
 guarantee that renaming a file to an existing filename 
 will overwrite the file. 
 
-Note: I've modified this on 2001-02-15 for compilation
-for Win32 with Borland C++ (assuming \verb|MSDOS| is defined). The second
-argument to \verb|tempname| cannot be null in that system.
+%JG-CHAR-TEMPD
+
 @d Write out \verb|files->spelling|
 @{{
   static char temp_name[] = "nw000000";
@@ -2609,7 +2623,8 @@ argument to \verb|tempname| cannot be null in that system.
     @<Compare the temp file and the old file@>
   else {
     remove(files->spelling);
-    rename(temp_name, files->spelling);
+    if (rename(temp_name, files->spelling)==-1)
+      remove(temp_name);
   }
 }@}
 
@@ -2633,8 +2648,10 @@ Again, we use a call to \verb|remove| before \verb|rename|.
       rename(temp_name, files->spelling);
     }
   }
-  else
-    rename(temp_name, files->spelling);
+  else {
+    if (rename(temp_name, files->spelling)==-1)
+      remove(temp_name);
+  }
 }@}
 
 
@@ -3065,11 +3082,15 @@ extern void write_single_scrap_ref();
               push('\n', &writer); 
               c = source_get();
               break;
+#if 0 // JG-XX
     case '1': case '2': case '3': 
     case '4': case '5': case '6':
     case '7': case '8': case '9':
               push(nw_char, &writer);
               break;
+#else
+  @<Handle macro parameter substitution@>
+#endif
     case '_': c = source_get();
               break;
     default : 
@@ -3796,6 +3817,7 @@ Name terminated by \verb+\n+ or \verb+@@{+; but keep skipping until \verb+@@{+
 }@}
 
 
+%JG-CHAR-CHR8
 Terminated by \verb+@@>+
 @o names.c
 @{Name *collect_scrap_name()
@@ -3819,7 +3841,7 @@ Terminated by \verb+@@>+
              @<Look for end of scrap name and return@>
              break;
            }
-         if (!isgraph(c)) {
+         if (!isgraph((signed char)c)) {
                    fprintf(stderr,
                            "%s: unexpected character in macro name (%s, %d)\n",
                            command_name, source_name, source_line);
@@ -4086,10 +4108,11 @@ void search()
 
 \subsection{Searching the Scraps}
 
+%JG-CHAR-CHR8
 @d Search scraps
 @{{
   for (i=1; i<scraps; i++) {
-    char c;
+    signed char c;
     Manager reader;
     Goto_Node *state = NULL;
     reader.prev = NULL;
