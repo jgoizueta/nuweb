@@ -2620,7 +2620,7 @@ will overwrite the file.
 @{{
   static char temp_name[] = "nw000000";
   static int temp_name_count = 0;
-  char indent_chars[500];
+  char indent_chars[1500];
   int temp_file_fd;
   FILE *temp_file;
 
