@@ -1,0 +1,149 @@
+%This package replaces former nwproges.tex and nwprogen.tex include files
+%using this avoids also having to use nwhren.sty or nwhres.sty
+%Example of use
+%\documentclass[a4paper,oneside,<language>]{article}
+%\usepackage[<language>,<fonts>]{nwprog}
+% where <language> can be english or spanish, 
+% and <fonts> specifies a fonts set (by the purpose of the final --pdf-- file):
+%  web (small file), read (good-looking on screen), print (good-looking  on paper)
+
+
+\NeedsTeXFormat{LaTeX2e}[1995/06/01]
+%\NeedsPackage{listings}[2004/02/13]
+\ProvidesPackage{nwprog}
+          [2002/08/29 18:14:52 0 NuWeb Programs (Javier Goizueta)]
+\DeclareOption{english}{%
+\PassOptionsToPackage{\CurrentOption}{babel}%
+\PassOptionsToPackage{\CurrentOption}{isodate}%
+% use nuweb hyper-links, english
+\renewcommand{\NWhr}{\RequirePackage{nwhren}}%
+}
+\DeclareOption{spanish}{%
+\PassOptionsToPackage{\CurrentOption}{babel}%
+\PassOptionsToPackage{\CurrentOption}{isodate}%
+% use nuweb hyper-links, spanish
+\renewcommand{\NWhr}{\RequirePackage{nwhres}}%
+}
+
+% any further options are taken to be font variants
+\DeclareOption*{\input{\CurrentOption fontsnw.def}}
+
+\newcommand{\NWfonts}{}
+\newcommand{\NWhr}{}
+
+\ProcessOptions\relax
+
+\RequirePackage{latexsym}
+\RequirePackage[dvipdfm,colorlinks=true,linkcolor=blue]{hyperref}
+\RequirePackage{babel}
+\RequirePackage[latin1]{inputenc}
+\RequirePackage[dvipdfm]{graphicx}
+\RequirePackage[iso]{isodate}
+
+% ===========================================================================
+% Definiciones
+
+% fragmentos cortos de código (identificadores)
+\newcommand{\cd}[1]{\mbox{\tt#1}}
+% para fragmentos más largos (que se puedan interrumpir)
+\newcommand{\cdl}[1]{{\tt#1}}
+
+% términos extranjeros
+\newcommand{\ex}[1]{{\em#1}}
+
+% variables
+\newcommand{\vr}[1]{{\it#1}}
+
+%\newcommand{\frag}[2]{{\em Lenguaje: }{#1}{ \em Contexto:}{#2}}
+%\newcommand{\frag}[2]{}
+%\newcommand{\frag}[2]{\marginpar{\raggedright\footnotesize{\em L: }{#1}{ \em C:}{#2}}}
+\newcommand{\frag}[2]{}
+
+% margin notes; for a narrow margin it's better to use
+% \raggedright or \raggedleft
+\newcommand{\mar}[1]{\marginpar{\raggedright#1}}
+% for symmetry in twoside layouts we could use
+%\newcommand{\mar}[1]{\marginpar[\raggedleft#1]{\raggedright#1}}
+% or
+%\newcommand{\mar}[1]{\marginpar[\raggedright#1]{\raggedleftt#1}}
+
+% ===========================================================================
+
+\NWhr
+% this is to have bigger scrap end markers:
+\renewcommand{\NWsep}{$\Diamond $}
+
+
+
+
+% ===========================================================================
+\NWfonts
+
+
+% ===========================================================================
+% Maquetación
+
+% Disposición ---------------------------------------------------------------
+
+% --original code for geometry 2.3
+%\RequirePackage[a4paper,margin=2.5cm,top=5mm,bottom=5mm,headsep=15mm,footskip=20mm]{geometry}
+% --fixed for geometry 3.2
+%\RequirePackage[a4paper,includehead,includefoot,margin=2.5cm,top=5mm,bottom=5mm,headsep=15mm,footskip=20mm]{geometry}
+% --fixed for printer margirn and uncertainty
+%\RequirePackage[a4paper,includehead,includefoot,margin=2.5cm,top=10mm,bottom=10mm,headsep=15mm,footskip=20mm]{geometry}
+\RequirePackage[a4paper,includehead,includefoot,margin=2cm,top=10mm,bottom=10mm,headsep=15mm,footskip=20mm]{geometry}
+
+% Cabeceras y Pies ----------------------------------------------------------
+% Títulos ---------------------------------------------------------------
+
+
+
+\RequirePackage{lastpage}
+
+%\RequirePackage[sf,bf,big,raggedright,compact,topmarks,calcwidth,pagestyles]{titlesec}
+%\RequirePackage[sf,bf,big,raggedright,compact]{titlesec}
+\RequirePackage[rm,bf,big,raggedright,compact]{titlesec}
+
+\newpagestyle{prog}{%
+  \headrule\footrule%
+  \sethead{\sffamily\ProgTitle}{}{\ProgDate}%
+  \setfoot{\ProgSource}{}{\thepage\ / \pageref{LastPage}}%
+}%
+
+%\widenhead*{2cm}{2cm}
+\widenhead*{1.5cm}{1.5cm}
+
+\pagestyle{prog}
+
+% ===========================================================================
+% Macros para usar listings
+
+\usepackage{color}
+\definecolor{strcolor}{rgb}{0.4,0.5,0.4} 
+
+\RequirePackage{listings}
+
+\lstset{extendedchars=true, stringstyle={\ttfamily\bfseries\color{strcolor}}, breaklines=true}
+%\lstloadlanguages{ruby,html,c,c++,basic,java,make,mathematica,sql}
+\newcommand{\lng}[1]{\lstset{basicstyle={}, keepspaces=true, language=#1}}
+\newcommand{\lngNeutral}{\lstset{keepspaces=true, language={}, basicstyle={\ttfamily\small}}}
+\newcommand{\lngPair}[2]{\lstset{basicstyle={}, keepspaces=true, language=#1, alsolanguage=#2}}
+
+\newcommand{\lngRuby}{\lng{ruby}}
+\newcommand{\lngHTML}{\lng{html}}
+\newcommand{\lngCSS}{\lngNeutral}
+\newcommand{\lngJavaScript}{\lngNeutral}
+\newcommand{\lngC}{\lng{c}}
+\newcommand{\lngCpp}{\lng{c++}}
+\newcommand{\lngMathematica}{\lng{mathematica}}
+\newcommand{\lngBasic}{\lng{basic}}
+\newcommand{\lngVisualBasic}{\lng{[visual]{basic}}}
+\newcommand{\lngVBScript}{\lng{vbscript}}
+\newcommand{\lngMake}{\lng{make}}
+\newcommand{\lngMetaPost}{\lng{metapost}}
+\newcommand{\lngSQL}{\lng{sql}}
+\newcommand{\lngJava}{\lng{java}}
+\newcommand{\lngRPL}{\lngNeutral}
+\newcommand{\lngCs}{\lngNeutral}
+\newcommand{\lngMapBasic}{\lng{basic}}
+\newcommand{\lngRubySQL}{\lngPair{ruby,sql}}
