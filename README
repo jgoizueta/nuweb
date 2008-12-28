@@ -2,3 +2,11 @@
 
 This is a fork of the CVS project at http://nuweb.sourceforge.net/
 with the purpose of fixing bugs and adding some functionality.
+
+= Contents
+
+* nuweb : this directory contains the modified nuweb source code from nuweb.sourceforge.net
+* bootstrap : this directory contains the nuweb C code generated from the nuweb source and
+  is useful to build nuweb initially on a new system (without a compiled nuweb available).
+* tasks : rake tasks to build nuweb projects
+* tex : latex styles for nuweb documentation
