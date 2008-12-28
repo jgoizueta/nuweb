@@ -31,6 +31,8 @@
 % 
 
 % Notes:
+% Updates on 2004-08-12 from Javier Goizueta <jgoizueta@@wanaddo.es>
+% -- old modifications merged into latest version
 % Updates on 2004-02-23 from Gregor Goldbach <glauschwuffel@@users.sourceforge.net>
 % -- new command line option -r which will make nuweb typeset each NWtarget and NWlink
 %    instance with \LaTeX-commands from the hyperref package. This gives clickable scrap
@@ -49,11 +51,7 @@
 %
 % This file has been changed by Javier Goizueta <jgoizueta@@jazzfree.es>
 % on 2001-02-15.
-% The places where it has been modified are tagged by a Latex comment
-% starting with %JG-
-% Each modification also includes a code that identifies which change
-% has originated the modification. These are the changes:
-%  --tags from changes incorporated into nuweb CVS code have beer removed
+% These are the changes:
 % LANG  -- Introduction of \NW macros to substitue language dependent text
 % DIAM  -- Introduction of \NWsep instead of the \diamond separator
 % HYPER -- Introduction of hyper-references
@@ -66,8 +64,6 @@
 % TIE   -- Replacement of ~ by "\nobreak\ "
 % SCRAPs-- Elimination of s
 % DNGL  -- Correction: option -d was not working and was misdocumented
-% CHR8  -- Patch to allow 8-bit characters in macro names
-% TEMPD -- Delete temporary files when output directory does not exists.
 %  --after the CHAR modifications, to be able to specify non-ascii characters
 %    for the scape character, the program must be compiled with the -K
 %    option in Borland compilers or the -funsigned-char in GNU's gcc
@@ -81,20 +77,6 @@
 %   used with the spanish.ldf option (which makes ~ an active character).
 % --2002-01-15: an ``s'' was being added to the NWtxtDefBy and NWtxtDefBy
 %   messages when followed by more than one reference.
-% --2002-01-22: using expressions like \'a for spanish accents was bothering
-%   me too much. This is a quick patch to allow ISO-8859-1 characters in macro
-%   names. (it relies in being compiled with unsigned chars)
-% --2002-06-14: This happens at least on DOS/Windows: if target directory does
-%   not exits, rename fails. This leaves temporary files in that case which is
-%   a problem in this version, because if the macro O_EXCL is not defined
-%   (as happens in windows) the temporary file will not be overwritten for the
-%   next file (should the "a" for append be changed in the non O_EXCL alternative?)
-% --2002-06-27: symbolic parameters (@@1,@@2,...) didn't work in the
-%   parameters values passed to macro invocation. To allow for this I've changed
-%   the Parameters type (that was simply an array of ints) and added a pointer
-%   so that each parameter list points to the parameter list active at the
-%   point of its definition. This way, we can evaluate parameters in the
-%   parameter list.
 
 \documentclass{report}
 \newif\ifshowcode
@@ -895,9 +877,11 @@ extern char * dirpath;    /* The prepended directory path */
 extern char * path_sep;   /* How to join path to filename */
 extern int listings_flag;   /* if TRUE, use listings package for scrap formatting */
 extern int hyperref_flag;   /* if TRUE, use hyperref formatting for targets and links */
+extern int undefined_flag;  /* if TRUE, emit undefined macro names to output */
+extern int arglabels_flag;  /* if TRUE, label macro parameters passed */
 @| tex_flag html_flag output_flag compare_flag
 verbose_flag number_flag scrap_flag dangling_flag
-listings_flag hyperref_flag @}
+listings_flag hyperref_flag undefined_flag arglabels_flag @}
 
 The flags are all initialized for correct default behavior.
 
@@ -915,6 +899,8 @@ char * dirpath = DEFAULT_PATH; /* Default directory path */
 char * path_sep = PATH_SEP_CHAR;
 int listings_flag = FALSE;
 int hyperref_flag = FALSE;
+int undefined_flag = FALSE;
+int arglabels_flag = FALSE;
 @}
 
 A global variable \verb|nw_char| will be used for the nuweb
@@ -982,6 +968,10 @@ we've got to loop through the string, handling them all.
       case 'l': listings_flag = TRUE;
                 break;
       case 'r': hyperref_flag = TRUE;
+                break;
+      case 'u': undefined_flag = TRUE;
+                break;
+      case 'a': arglabels_flag = TRUE;
                 break;
       default:  fprintf(stderr, "%s: unexpected argument ignored.  ",
                         command_name);
@@ -1292,6 +1282,7 @@ with each new definition being added to the head of the list.
    exit(-1);
 
 skipped:
+  ;
 }
 @}
 
@@ -1349,10 +1340,6 @@ to the inocation anteceding the current one.
 When we are copying a scrap to the output, we can then pull
 the $n$th string from the \verb|Parameters| list when we
 see an \verb|@@1| \verb|@@2|, etc.
-
-here, when calling write_scraps, the last parameters should be
-the parent parameters rather than zero.
-i.e. the parameters prior to the current macro invocation
 
 @d Handle macro parameter substitution @{
     case '1': case '2': case '3':
@@ -1479,8 +1466,9 @@ argument list for a macro.
      fputc(sep,file);
 
      fputs("{\\footnotesize ", file);
-     /* write_single_scrap_ref(file, scraps); */
-     fprintf(file, "\\label{scrap%d}\n", scraps);
+     if (arglabels_flag)     
+       write_single_scrap_ref(file, scraps + 1);
+     fprintf(file, "\\label{scrap%d}\n", scraps + 1);
      fputs(" }", file);
 
      source_last = '{';
@@ -3086,7 +3074,6 @@ Again, we use a call to \verb|remove| before \verb|rename|.
     if (rename(temp_name, real_name)==-1)
       remove(temp_name);
   }
-
 }@}
 
 
@@ -3255,7 +3242,7 @@ hence this whole unsatisfactory \verb|double_at| business.
     do 
       c = getc(source_file);
     while (c == ' ' || c == '\t');
-    while (isgraph((signed char)c)) {
+    while (isgraph(c)) {
       *p++ = c;
       c = getc(source_file);
     }
@@ -3538,7 +3525,7 @@ extern void write_single_scrap_ref();
               break;
     case 'x': @<Get label while collecting scrap@>
               break;
-    case '1': case '2': case '3': 
+    case '1': case '2': case '3':
     case '4': case '5': case '6':
     case '7': case '8': case '9':
     case 'f': case '#':
@@ -3926,11 +3913,13 @@ may be needed when the next macro is started.
   }
   else
   {
-    int ln = fprintf(file, "%c<%s%c>",  nw_char, name->spelling, nw_char);
-    for (; --ln >= 0;)
-    {
-      indent_chars[global_indent + indent] = ' ';
-      indent++;
+    if (undefined_flag) {    
+      int ln = fprintf(file, "%c<%s%c>",  nw_char, name->spelling, nw_char);
+      for (; --ln >= 0;)
+      {
+        indent_chars[global_indent + indent] = ' ';
+        indent++;
+      }
     }
     if (!tex_flag)
     fprintf(stderr, "%s: macro never defined <%s>\n",
@@ -4455,7 +4444,7 @@ Terminated by \verb+@@>+
              @<Look for end of scrap name and return@>
              break;
            }
-         if (!isgraph((signed char)c)) {
+         if (!isgraph(c)) {
                    fprintf(stderr,
                            "%s: unexpected character in macro name (%s, %d)\n",
                            command_name, source_name, source_line);
@@ -4725,7 +4714,6 @@ void search()
 
 \subsection{Searching the Scraps}
 
-%JG-CHAR-CHR8
 @d Search scraps
 @{{
   for (i=1; i<scraps; i++) {
