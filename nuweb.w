@@ -48,8 +48,12 @@
 % -- @@\# suppress indent
 %
 % This file has been changed by Javier Goizueta <jgoizueta@@jazzfree.es>
-% on 2001-02-15. 
-% These are the changes:
+% on 2001-02-15.
+% The places where it has been modified are tagged by a Latex comment
+% starting with %JG-
+% Each modification also includes a code that identifies which change
+% has originated the modification. These are the changes:
+%  --tags from changes incorporated into nuweb CVS code have beer removed
 % LANG  -- Introduction of \NW macros to substitue language dependent text
 % DIAM  -- Introduction of \NWsep instead of the \diamond separator
 % HYPER -- Introduction of hyper-references
@@ -62,6 +66,8 @@
 % TIE   -- Replacement of ~ by "\nobreak\ "
 % SCRAPs-- Elimination of s
 % DNGL  -- Correction: option -d was not working and was misdocumented
+% CHR8  -- Patch to allow 8-bit characters in macro names
+% TEMPD -- Delete temporary files when output directory does not exists.
 %  --after the CHAR modifications, to be able to specify non-ascii characters
 %    for the scape character, the program must be compiled with the -K
 %    option in Borland compilers or the -funsigned-char in GNU's gcc
@@ -75,6 +81,20 @@
 %   used with the spanish.ldf option (which makes ~ an active character).
 % --2002-01-15: an ``s'' was being added to the NWtxtDefBy and NWtxtDefBy
 %   messages when followed by more than one reference.
+% --2002-01-22: using expressions like \'a for spanish accents was bothering
+%   me too much. This is a quick patch to allow ISO-8859-1 characters in macro
+%   names. (it relies in being compiled with unsigned chars)
+% --2002-06-14: This happens at least on DOS/Windows: if target directory does
+%   not exits, rename fails. This leaves temporary files in that case which is
+%   a problem in this version, because if the macro O_EXCL is not defined
+%   (as happens in windows) the temporary file will not be overwritten for the
+%   next file (should the "a" for append be changed in the non O_EXCL alternative?)
+% --2002-06-27: symbolic parameters (@@1,@@2,...) didn't work in the
+%   parameters values passed to macro invocation. To allow for this I've changed
+%   the Parameters type (that was simply an array of ints) and added a pointer
+%   so that each parameter list points to the parameter list active at the
+%   point of its definition. This way, we can evaluate parameters in the
+%   parameter list.
 
 \documentclass{report}
 \newif\ifshowcode
@@ -120,7 +140,7 @@ urlcolor={linkcolor}%
 
 \lstset{extendedchars=true,keepspaces=true,language=C}
 
-\title{Nuweb Version 1.1b \\ A Simple Literate Programming Tool}
+\title{Nuweb Version 1.1c \\ A Simple Literate Programming Tool}
 \date{}
 \author{Preston Briggs\thanks{This work has been supported by ARPA,
 through ONR grant N00014-91-J-1989.} 
@@ -1318,6 +1338,9 @@ Macro parameters were added on later in nuweb's development.
 There still is not, for example, an index of macro parameters.
 We need a data type to keep track of macro parameters.
 
+Parameter lists will be chained; each one pointing to the one corresponding
+to the inocation anteceding the current one.
+
 @o scraps.c
 @{typedef struct Param { int p[10]; struct Param* parent;} *Parameters;
 @| Parameters @}
@@ -1327,8 +1350,12 @@ When we are copying a scrap to the output, we can then pull
 the $n$th string from the \verb|Parameters| list when we
 see an \verb|@@1| \verb|@@2|, etc.
 
+here, when calling write_scraps, the last parameters should be
+the parent parameters rather than zero.
+i.e. the parameters prior to the current macro invocation
+
 @d Handle macro parameter substitution @{
-    case '1': case '2': case '3': 
+    case '1': case '2': case '3':
     case '4': case '5': case '6':
     case '7': case '8': case '9':
               if ( parameters && parameters->p[c - '1'] ) {
@@ -1359,15 +1386,15 @@ and write in the collected scrap:
    @@<foo @@(10@@,11@@)@@>
 \end{verbatim}
 
-@d Save macro parameters 
-@{{ 
+@d Save macro parameters
+@{{
   int param_scrap;
   char param_buf[10];
 
   push(nw_char, &writer);
   push('(', &writer);
   do {
-     
+
      param_scrap = collect_scrap();
      sprintf(param_buf, "%d", param_scrap);
      pushs(param_buf, &writer);
@@ -1424,6 +1451,20 @@ first character.
     }
     *parameters = res;
   }
+else
+  {
+    Parameters res = arena_getmem(sizeof(*res));
+    int *p2 = res->p;
+    int count = 0;
+
+    res->parent = 0;
+    
+    while (count < 10) {
+      *p2++ = 0;
+      count++;
+    }
+    *parameters = res;
+  }
 @}
 
 These are used in \verb|write_tex| and \verb|write_html| to output the
@@ -1438,8 +1479,8 @@ argument list for a macro.
      fputc(sep,file);
 
      fputs("{\\footnotesize ", file);
-     write_single_scrap_ref(file, scraps + 1);
-     fprintf(file, "\\label{scrap%d}\n", scraps + 1);
+     /* write_single_scrap_ref(file, scraps); */
+     fprintf(file, "\\label{scrap%d}\n", scraps);
      fputs(" }", file);
 
      source_last = '{';
@@ -2970,7 +3011,7 @@ for Win32 with Borland C++ (assuming \verb|MSDOS| is defined). The second
 argument to \verb|tempname| cannot be null in that system.
 @d Type dec...
 @{
-#define MAX_INDENT 500
+#define MAX_INDENT 1500
 @}
 
 @d Write out \verb|files->spelling|
@@ -3015,7 +3056,8 @@ argument to \verb|tempname| cannot be null in that system.
     @<Compare the temp file and the old file@>
   else {
     remove(real_name);
-    rename(temp_name, real_name);
+    if (rename(temp_name, real_name)==-1)
+      remove(temp_name);
   }
 }@}
 
@@ -3036,11 +3078,15 @@ Again, we use a call to \verb|remove| before \verb|rename|.
       remove(temp_name);
     else {
       remove(real_name);
-      rename(temp_name, real_name);
+      if (rename(temp_name, real_name)==-1)
+        remove(temp_name);      
     }
   }
-  else
-    rename(temp_name, real_name);
+  else {
+    if (rename(temp_name, real_name)==-1)
+      remove(temp_name);
+  }
+
 }@}
 
 
@@ -3756,7 +3802,7 @@ if (!name->defs || name->defs->scrap != current_scrap) {
                  break;
       case '\t': @<Handle tab...@>
                  break;
-      default:   
+      default:
          if (c==nw_char)
            {
              @<Check for macro invocation in scrap@>
@@ -4378,6 +4424,7 @@ Name terminated by \verb+\n+ or \verb+@@{+; but keep skipping until \verb+@@{+
 }@}
 
 
+%JG-CHAR-CHR8
 Terminated by \verb+@@>+
 @o names.c
 @{Name *collect_scrap_name()
@@ -4408,7 +4455,7 @@ Terminated by \verb+@@>+
              @<Look for end of scrap name and return@>
              break;
            }
-         if (!isgraph(c)) {
+         if (!isgraph((signed char)c)) {
                    fprintf(stderr,
                            "%s: unexpected character in macro name (%s, %d)\n",
                            command_name, source_name, source_line);
@@ -4678,6 +4725,7 @@ void search()
 
 \subsection{Searching the Scraps}
 
+%JG-CHAR-CHR8
 @d Search scraps
 @{{
   for (i=1; i<scraps; i++) {
