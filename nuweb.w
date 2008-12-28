@@ -1192,6 +1192,20 @@ first character.
     }
     *parameters = res;
   }
+else
+  {
+    Parameters res = arena_getmem(sizeof(*res));
+    int *p2 = res->p;
+    int count = 0;
+
+    res->parent = 0;
+    
+    while (count < 10) {
+      *p2++ = 0;
+      count++;
+    }
+    *parameters = res;
+  }
 @}
 
 These are used in \verb|write_tex| and \verb|write_html| to output the
