@@ -565,7 +565,7 @@ Processing a web requires three major steps:
 
 I have divided the program into several files for quicker
 recompilation during development.
-@o global.h -d
+@o global.h
 @{@<Include files@>
 @<Type declarations@>
 @<Global variable declarations@>
@@ -607,14 +607,14 @@ The code is divided into four main files (introduced here) and five
 support files (introduced in the next section).
 The file \verb|main.c| will contain the driver for the whole program
 (see Section~\ref{main-routine}).
-@o main.c -d
+@o main.c
 @{#include "global.h"
 @}
 
 The first pass over the source file is contained in \verb|pass1.c|.
 It handles collection of all the file names, macros names, and scraps
 (see Section~\ref{pass-one}).
-@o pass1.c -d
+@o pass1.c
 @{#include "global.h"
 @}
 
@@ -622,7 +622,7 @@ The \verb|.tex| file is created during a second pass over the source
 file. The file \verb|latex.c| contains the code controlling the
 construction of the \verb|.tex| file 
 (see Section~\ref{latex-file}).
-@o latex.c -d
+@o latex.c
 @{#include "global.h"
 static int scraps = 1;
 @}
@@ -630,14 +630,14 @@ static int scraps = 1;
 The file \verb|html.c| contains the code controlling the
 construction of the \verb|.tex| file appropriate for use with {\LaTeX}2HTML
 (see Section~\ref{html-file}).
-@o html.c -d
+@o html.c
 @{#include "global.h"
 static int scraps = 1;
 @}
 
 The code controlling the creation of the output files is in \verb|output.c|
 (see Section~\ref{output-files}).
-@o output.c -d
+@o output.c
 @{#include "global.h"
 @}
 
@@ -648,32 +648,32 @@ The support files contain a variety of support routines used to define
 and manipulate the major data abstractions.
 The file \verb|input.c| holds all the routines used for referring to
 source files (see Section~\ref{source-files}).
-@o input.c -d
+@o input.c
 @{#include "global.h"
 @}
 
 Creation and lookup of scraps is handled by routines in \verb|scraps.c|
 (see Section~\ref{scraps}).
-@o scraps.c -d
+@o scraps.c
 @{#include "global.h"
 @}
 
 
 The handling of file names and macro names is detailed in \verb|names.c|
 (see Section~\ref{names}).
-@o names.c -d
+@o names.c
 @{#include "global.h"
 @}
 
 Memory allocation and deallocation is handled by routines in \verb|arena.c|
 (see Section~\ref{memory-management}).
-@o arena.c -d
+@o arena.c
 @{#include "global.h"
 @}
 
 Finally, for best portability, I seem to need a file containing
 (useless!) definitions of all the global variables.
-@o global.c -d
+@o global.c
 @{#include "global.h"
 @<Global variable definitions@>
 @}
@@ -683,7 +683,7 @@ Finally, for best portability, I seem to need a file containing
 The main routine is quite simple in structure.
 It wades through the optional command-line arguments,
 then handles any files listed on the command line.
-@o main.c -d
+@o main.c
 @{
 @<Operating System Dependencies@>
 int main(argc, argv)
@@ -958,7 +958,7 @@ necessary preparation, we make a pass over the file, filling in all
 our data structures. Next, we seach all the scraps for references to
 the user-specified index entries. Finally, we must reverse all the
 cross-reference lists accumulated while scanning the scraps.
-@o pass1.c -d
+@o pass1.c
 @{void pass1(file_name)
      char *file_name;
 {
@@ -1081,7 +1081,7 @@ cada una apunte a la correspondiente a la invocación antecesora a
 a la actual.
 
 
-@o scraps.c -d
+@o scraps.c
 @{typedef struct Parameters_t { int p[10]; struct Parameters_t *parent; } *Parameters;
 @| Parameters @}
 
@@ -1206,7 +1206,7 @@ argument list for a macro.
      fputc(sep,file);
 
      fputs("{\\footnotesize ", file);
-     write_single_scrap_ref(file, scraps);
+     /* write_single_scrap_ref(file, scraps); */
      fprintf(file, "\\label{scrap%d}\n", scraps);
      fputs(" }", file);
 
@@ -1276,7 +1276,7 @@ be the place to look.
 We need a few local function declarations before we get into the body
 of \verb|write_tex|.
 
-@o latex.c -d
+@o latex.c
 @{static void copy_scrap();             /* formats the body of a scrap */
 static void print_scrap_numbers();      /* formats a list of scrap numbers */
 static void format_entry();             /* formats an index entry */
@@ -1286,7 +1286,7 @@ static void format_user_entry();
 
 The routine \verb|write_tex| takes two file names as parameters: the
 name of the web source file and the name of the \verb|.tex| output file.
-@o latex.c -d
+@o latex.c
 @{void write_tex(file_name, tex_name)
      char *file_name;
      char *tex_name;
@@ -1558,7 +1558,7 @@ a scrap will not be indented. Again, this is a matter of personal taste.
   fputs("\\end{list}\n", tex_file);
 }@}
 
-@o latex.c -d
+@o latex.c
 @{static void print_scrap_numbers(tex_file, scraps)
      FILE *tex_file;
      Scrap_Node *scraps;
@@ -1591,7 +1591,7 @@ This is the only place we really care whether a scrap is
 delimited with \verb|@@{...@@}|, \verb|@@[...@@]|, or \verb|@@(...@@)|,
 and we base our output sequences on that.
 
-@o latex.c -d
+@o latex.c
 @{static char *delimit_scrap[3][5] = {
   /* {} mode: begin, end, insert nw_char, prefix, suffix */
   { "\\verb@@", "@@", "@@{\\tt @@}\\verb@@", "\\mbox{}", "\\\\" },
@@ -1817,7 +1817,7 @@ This scrap helps deal with bold keywords:
 }@}
 
 
-@o latex.c -d
+@o latex.c
 @{static void format_entry(name, tex_file, file_flag)
      Name *name;
      FILE *tex_file;
@@ -1934,7 +1934,7 @@ This scrap helps deal with bold keywords:
 }@}
 
 
-@o latex.c -d
+@o latex.c
 @{static void format_user_entry(name, tex_file)
      Name *name;
      FILE *tex_file;
@@ -2034,7 +2034,7 @@ cross-reference information is printed out.
 We need a few local function declarations before we get into the body
 of \verb|write_html|.
 
-@o html.c -d
+@o html.c
 @{static void copy_scrap();               /* formats the body of a scrap */
 static void display_scrap_ref();        /* formats a scrap reference */
 static void display_scrap_numbers();    /* formats a list of scrap numbers */
@@ -2046,7 +2046,7 @@ static void format_user_entry();
 
 The routine \verb|write_html| takes two file names as parameters: the
 name of the web source file and the name of the \verb|.tex| output file.
-@o html.c -d
+@o html.c
 @{void write_html(file_name, html_name)
      char *file_name;
      char *html_name;
@@ -2259,7 +2259,7 @@ end the paragraph.
   fputs("<br>\n", html_file);
 }@}
 
-@o html.c -d
+@o html.c
 @{static void display_scrap_ref(html_file, num)
      FILE *html_file;
      int num;
@@ -2272,7 +2272,7 @@ end the paragraph.
 }
 @| display_scrap_ref @}
 
-@o html.c -d
+@o html.c
 @{static void display_scrap_numbers(html_file, scraps)
      FILE *html_file;
      Scrap_Node *scraps;
@@ -2287,7 +2287,7 @@ end the paragraph.
 }
 @| display_scrap_numbers @}
 
-@o html.c -d
+@o html.c
 @{static void print_scrap_numbers(html_file, scraps)
      FILE *html_file;
      Scrap_Node *scraps;
@@ -2302,7 +2302,7 @@ end the paragraph.
 
 We must translate HTML special keywords into entities in scraps.
 
-@o html.c -d
+@o html.c
 @{static void copy_scrap(file)
      FILE *file;
 {
@@ -2442,7 +2442,7 @@ pointed out any during the first pass.
      }
 }@}
 
-@o html.c -d
+@o html.c
 @{static void format_entry(name, html_file, file_flag)
      Name *name;
      FILE *html_file;
@@ -2514,7 +2514,7 @@ pointed out any during the first pass.
 }@}
 
 
-@o html.c -d
+@o html.c
 @{static void format_user_entry(name, html_file)
      Name *name;
      FILE *html_file;
@@ -2571,7 +2571,7 @@ pointed out any during the first pass.
 @{extern void write_files();
 @}
 
-@o output.c -d
+@o output.c
 @{void write_files(files)
      Name *files;
 {
@@ -2636,7 +2636,7 @@ will overwrite the file.
   if (verbose_flag)
     fprintf(stderr, "writing %s [%s]\n", files->spelling, temp_name);
   write_scraps(temp_file, files->defs, 0, indent_chars,
-               files->debug_flag, files->tab_flag, files->indent_flag, 0, 0);
+               files->debug_flag, files->tab_flag, files->indent_flag, 0);
   fclose(temp_file);
   if (compare_flag)
     @<Compare the temp file and the old file@>
@@ -2704,7 +2704,7 @@ int source_line = 0;
 \subsection{Local Declarations}
 
 
-@o input.c -d
+@o input.c
 @{static FILE *source_file;  /* the current input file */
 static int source_peek;
 static int double_at;
@@ -2712,7 +2712,7 @@ static int include_depth;
 @| source_peek source_file double_at include_depth @}
 
 
-@o input.c -d
+@o input.c
 @{static struct {
   FILE *file;
   char *name;
@@ -2729,7 +2729,7 @@ current source file. It notices newlines and keeps the line counter
 for \verb|@@|~characters. All other characters are immediately returned.
 We define \verb|source_last| to let us tell which type of scrap we
 are defining.
-@o input.c -d
+@o input.c
 @{
 int source_last;
 int source_get()
@@ -2753,7 +2753,7 @@ int source_get()
 @| source_get source_last @}
 
 \verb|source_ungetc| pushes a read character back to the \verb|source_file|.
-@o input.c -d
+@o input.c
 @{int source_ungetc(int *c)
 {       
         ungetc(source_peek, source_file);
@@ -2871,7 +2871,7 @@ on the stack, the \verb|EOF| is returned.
 The routine \verb|source_open| takes a file name and tries to open the
 file. If unsuccessful, it complains and halts. Otherwise, it sets 
 \verb|source_name|, \verb|source_line|, and \verb|double_at|.
-@o input.c -d
+@o input.c
 @{void source_open(name)
      char *name;
 {
@@ -2895,7 +2895,7 @@ file. If unsuccessful, it complains and halts. Otherwise, it sets
 \section{Scraps} \label{scraps}
 
 
-@o scraps.c -d
+@o scraps.c
 @{#define SLAB_SIZE 500
 
 typedef struct slab {
@@ -2905,7 +2905,7 @@ typedef struct slab {
 @| Slab SLAB_SIZE @}
 
 
-@o scraps.c -d
+@o scraps.c
 @{typedef struct {
   char *file_name;
   int file_line;
@@ -2915,7 +2915,7 @@ typedef struct slab {
 } ScrapEntry;
 @| ScrapEntry @}
 
-@o scraps.c -d
+@o scraps.c
 @{static ScrapEntry *SCRAP[256];
 
 #define scrap_array(i) SCRAP[(i) >> 8][(i) & 255]
@@ -2933,7 +2933,7 @@ extern void write_single_scrap_ref();
 @}
 
 
-@o scraps.c -d
+@o scraps.c
 @{void init_scraps()
 {
   scraps = 1;
@@ -2941,7 +2941,7 @@ extern void write_single_scrap_ref();
 }
 @| init_scraps @}
 
-@o scraps.c -d
+@o scraps.c
 @{void write_scrap_ref(file, num, first, page)
      FILE *file;
      int num;
@@ -2968,7 +2968,7 @@ extern void write_single_scrap_ref();
 }
 @| write_scrap_ref @}
 
-@o scraps.c -d
+@o scraps.c
 @{void write_single_scrap_ref(file, num)
      FILE *file;
      int num;
@@ -2996,7 +2996,7 @@ extern void write_single_scrap_ref();
 @{int already_warned = 0;
 @}
 
-@o scraps.c -d
+@o scraps.c
 @{typedef struct {
   Slab *scrap;
   Slab *prev;
@@ -3006,7 +3006,7 @@ extern void write_single_scrap_ref();
 
 
 
-@o scraps.c -d
+@o scraps.c
 @{static void push(c, manager)
      char c;
      Manager *manager;
@@ -3024,7 +3024,7 @@ extern void write_single_scrap_ref();
 }
 @| push @}
 
-@o scraps.c -d
+@o scraps.c
 @{static void pushs(s, manager)
      char *s;
      Manager *manager;
@@ -3035,7 +3035,7 @@ extern void write_single_scrap_ref();
 @| pushs @}
 
 
-@o scraps.c -d
+@o scraps.c
 @{int collect_scrap()
 {
   int current_scrap;
@@ -3195,7 +3195,7 @@ extern void write_single_scrap_ref();
   }
 }@}
 
-@o scraps.c -d
+@o scraps.c
 @{static char pop(manager)
      Manager *manager;
 {
@@ -3213,7 +3213,7 @@ extern void write_single_scrap_ref();
 @| pop @}
 
 
-@o scraps.c -d
+@o scraps.c
 @{static Name *pop_scrap_name(manager, parameters)
      Manager *manager;
      Parameters *parameters;
@@ -3257,7 +3257,7 @@ extern void write_single_scrap_ref();
   }
 }@}
 
-@o scraps.c -d 
+@o scraps.c
 @{int write_scraps(file, defs, global_indent, indent_chars,
                    debug_flag, tab_flag, indent_flag, parameters)
      FILE *file;
@@ -3400,7 +3400,7 @@ extern void write_single_scrap_ref();
 @{extern void collect_numbers();
 @}
 
-@o scraps.c -d
+@o scraps.c
 @{void collect_numbers(aux_name)
      char *aux_name;
 {
@@ -3496,7 +3496,7 @@ extern char *save_string();
 extern void reverse_lists();
 @}
 
-@o names.c -d
+@o names.c
 @{enum { LESS, GREATER, EQUAL, PREFIX, EXTENSION };
 
 static int compare(x, y)
@@ -3527,7 +3527,7 @@ static int compare(x, y)
 @| compare LESS GREATER EQUAL PREFIX EXTENSION @}
 
 
-@o names.c -d
+@o names.c
 @{char *save_string(s)
      char *s;
 {
@@ -3537,7 +3537,7 @@ static int compare(x, y)
 }
 @| save_string @}
 
-@o names.c -d
+@o names.c
 @{static int ambiguous_prefix();
 
 Name *prefix_add(root, spelling)
@@ -3576,7 +3576,7 @@ continue the search down {\em both\/} branches of the tree.
             command_name, spelling, source_name, source_line);
 }@}
 
-@o names.c -d
+@o names.c
 @{static int ambiguous_prefix(node, spelling)
      Name *node;
      char *spelling;
@@ -3611,7 +3611,7 @@ atoms
 \end{quote}
 The function \verb|robs_strcmp| implements the desired predicate.
 
-@o names.c -d
+@o names.c
 @{static int robs_strcmp(x, y)
      char *x;
      char *y;
@@ -3643,7 +3643,7 @@ The function \verb|robs_strcmp| implements the desired predicate.
 }
 @| robs_strcmp @}
 
-@o names.c -d
+@o names.c
 @{Name *name_add(root, spelling)
      Name **root;
      char *spelling;
@@ -3683,7 +3683,7 @@ The function \verb|robs_strcmp| implements the desired predicate.
 
 Name terminated by whitespace.  Also check for ``per-file'' flags. Keep
 skipping white space until we reach scrap.
-@o names.c -d
+@o names.c
 @{Name *collect_file_name()
 {
   Name *new_name;
@@ -3744,7 +3744,7 @@ skipping white space until we reach scrap.
 
 
 Name terminated by \verb+\n+ or \verb+@@{+; but keep skipping until \verb+@@{+
-@o names.c -d
+@o names.c
 @{Name *collect_macro_name()
 {
   char name[100];
@@ -3836,7 +3836,7 @@ Name terminated by \verb+\n+ or \verb+@@{+; but keep skipping until \verb+@@{+
 
 %JG-CHAR-CHR8
 Terminated by \verb+@@>+
-@o names.c -d
+@o names.c
 @{Name *collect_scrap_name()
 {
   char name[100];
@@ -3903,7 +3903,7 @@ Terminated by \verb+@@>+
 }@}
 
 
-@o names.c -d
+@o names.c
 @{static Scrap_Node *reverse(); /* a forward declaration */
 
 void reverse_lists(names)
@@ -3921,7 +3921,7 @@ void reverse_lists(names)
 Just for fun, here's a non-recursive version of the traditional list
 reversal code. Note that it reverses the list in place; that is, it
 does no new allocations.
-@o names.c -d
+@o names.c
 @{static Scrap_Node *reverse(a)
      Scrap_Node *a;
 {
@@ -3949,14 +3949,14 @@ however, there is an interesting  paper describing an efficient
 solution~\cite{aho:75}.
 
 
-@o scraps.c -d
+@o scraps.c
 @{typedef struct name_node {
   struct name_node *next;
   Name *name;
 } Name_Node;
 @| Name_Node @}
 
-@o scraps.c -d
+@o scraps.c
 @{typedef struct goto_node {
   Name_Node *output;            /* list of words ending in this state */
   struct move_node *moves;      /* list of possible moves */
@@ -3965,7 +3965,7 @@ solution~\cite{aho:75}.
 } Goto_Node;
 @| Goto_Node @}
 
-@o scraps.c -d
+@o scraps.c
 @{typedef struct move_node {
   struct move_node *next;
   Goto_Node *state;
@@ -3973,14 +3973,14 @@ solution~\cite{aho:75}.
 } Move_Node;
 @| Move_Node @}
 
-@o scraps.c -d
+@o scraps.c
 @{static Goto_Node *root[128];
 static int max_depth;
 static Goto_Node **depths;
 @| root max_depth depths @}
 
 
-@o scraps.c -d
+@o scraps.c
 @{static Goto_Node *goto_lookup(c, g)
      char c;
      Goto_Node *g;
@@ -4003,7 +4003,7 @@ static Goto_Node **depths;
 @{extern void search();
 @}
 
-@o scraps.c -d
+@o scraps.c
 @{static void build_gotos();
 static int reject_match();
 
@@ -4024,7 +4024,7 @@ void search()
 
 
 
-@o scraps.c -d
+@o scraps.c
 @{static void build_gotos(tree)
      Name *tree;
 {
@@ -4174,7 +4174,7 @@ longer token. Of course, the concept of {\sl token\/} is
 language-dependent, so we may be occasionally mistaken.
 For the present, we'll consider the mechanism an experiment.
 
-@o scraps.c -d
+@o scraps.c
 @{#define sym_char(c) (isalnum(c) || (c) == '_')
 
 static int op_char(c)
@@ -4191,7 +4191,7 @@ static int op_char(c)
 }
 @| sym_char op_char @}
 
-@o scraps.c -d
+@o scraps.c
 @{static int reject_match(name, post, reader)
      Name *name;
      char post;
@@ -4234,7 +4234,7 @@ extern void arena_free();
 @}
 
 
-@o arena.c -d
+@o arena.c
 @{typedef struct chunk {
   struct chunk *next;
   char *limit;
@@ -4248,7 +4248,7 @@ at the current chunk of memory; it's initially pointed at \verb|first|.
 As soon as some storage is required, a ``real'' chunk of memory will
 be allocated and attached to \verb|first->next|; storage will be
 allocated from the new chunk (and later chunks if necessary).
-@o arena.c -d
+@o arena.c
 @{static Chunk first = { NULL, NULL, NULL };
 static Chunk *arena = &first;
 @| first arena @}
@@ -4262,7 +4262,7 @@ that returned pointers are always aligned.  We align to the nearest
 8~byte segment, since that'll satisfy the more common 2-byte and
 4-byte alignment restrictions too.
 
-@o arena.c -d
+@o arena.c
 @{void *arena_getmem(n)
      size_t n;
 {
@@ -4321,7 +4321,7 @@ need to allocate a new one.
 
 To free all the memory in the arena, we need only point \verb|arena|
 back to the first empty chunk.
-@o arena.c -d
+@o arena.c
 @{void arena_free()
 {
   arena = &first;
