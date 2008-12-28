@@ -1,6 +1,6 @@
 CC = cc
 
-CFLAGS = -O -g
+CFLAGS = -O -g -funsigned-char
 
 TARGET = nuweb
 VERSION = 1.0b2
